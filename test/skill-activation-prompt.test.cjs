@@ -59,3 +59,19 @@ test('skills and trajectories share one enclosing source label', t => {
 test('unmatched prompts emit no unnecessary context', t => {
     assert.equal(run(t), null);
 });
+
+test('standalone shell projection uses its sibling implementation', t => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-launcher-test-'));
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+    const launcher = path.join(root, 'skill-activation-prompt.sh');
+    fs.copyFileSync(path.resolve(__dirname, '../hooks/skill-activation-prompt.sh'), launcher);
+    fs.writeFileSync(path.join(root, 'skill-activation-prompt.js'),
+        "process.stdout.write('sibling:' + require('node:fs').readFileSync(0, 'utf8'));\n");
+    const env = { ...process.env, HOME: root };
+    delete env.GLOBAL_HOOKS_DIR;
+    const bash = process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : 'bash';
+    const child = spawnSync(bash, [launcher], { env, input: 'payload', encoding: 'utf8', timeout: 5000 });
+    assert.ifError(child.error);
+    assert.equal(child.status, 0, child.stderr);
+    assert.equal(child.stdout, 'sibling:payload');
+});
