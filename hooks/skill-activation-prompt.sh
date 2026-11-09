@@ -8,8 +8,8 @@ source "$SCRIPT_DIR/lib/hook-env.sh" 2>/dev/null || true
 
 log_hook_activation "skill-activation" "UserPromptSubmit" 2>/dev/null || true
 
-# Use global hooks directory (portable)
-cd "${GLOBAL_HOOKS_DIR:-$HOME/.claude/hooks}"
+# Honor explicit routing; standalone projections use their own implementation.
+cd "${GLOBAL_HOOKS_DIR:-$SCRIPT_DIR}" || exit 1
 
 # Use pre-compiled JS for speed (or tsx for dev)
 if [ -f "skill-activation-prompt.js" ]; then
